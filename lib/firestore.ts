@@ -81,6 +81,15 @@ export async function deleteChecklistItem(uid: string, itemId: string) {
   await deleteDoc(doc(db, 'users', uid, 'checklists', itemId))
 }
 
+export async function updateChecklistItem(
+  uid: string,
+  itemId: string,
+  label: string,
+  category: ChecklistCategory,
+) {
+  await updateDoc(doc(db, 'users', uid, 'checklists', itemId), { label, category })
+}
+
 // ── Budgets ────────────────────────────────────────────────────────────────
 
 export async function getBudgets(uid: string): Promise<Budget[]> {

@@ -8,6 +8,7 @@ import {
   addChecklistItem,
   toggleChecklistItem,
   deleteChecklistItem,
+  updateChecklistItem,
   ChecklistItem,
   ChecklistCategory,
 } from '@/lib/firestore'
@@ -28,6 +29,9 @@ export default function ChecklistPage() {
   const [filter, setFilter] = useState<ChecklistCategory | 'all'>('all')
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editLabel, setEditLabel] = useState('')
+  const [editCategory, setEditCategory] = useState<ChecklistCategory>('stationery')
 
   useEffect(() => {
     if (!user) return
@@ -54,6 +58,21 @@ export default function ChecklistPage() {
     setItems((prev) =>
       prev.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i)),
     )
+  }
+
+  function startEdit(item: ChecklistItem) {
+    setEditingId(item.id)
+    setEditLabel(item.label)
+    setEditCategory(item.category)
+  }
+
+  async function handleEdit(item: ChecklistItem) {
+    if (!user || !editLabel.trim()) return
+    await updateChecklistItem(user.uid, item.id, editLabel.trim(), editCategory)
+    setItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, label: editLabel.trim(), category: editCategory } : i)),
+    )
+    setEditingId(null)
   }
 
   async function handleDelete(id: string) {
@@ -139,25 +158,75 @@ export default function ChecklistPage() {
                 exit={{ opacity: 0, x: -16 }}
                 className="card flex items-center gap-3 py-3 px-4"
               >
-                <input
-                  type="checkbox"
-                  checked={item.checked}
-                  onChange={() => handleToggle(item)}
-                  className="h-4 w-4 rounded accent-brand-500 cursor-pointer"
-                />
-                <span className={clsx('flex-1 text-sm', item.checked && 'line-through text-stone-400')}>
-                  {item.label}
-                </span>
-                <span className="text-xs text-stone-400">
-                  {CATEGORIES.find((c) => c.value === item.category)?.emoji}
-                </span>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="text-stone-300 hover:text-red-400 transition text-lg leading-none"
-                  aria-label="Delete"
-                >
-                  ×
-                </button>
+                {editingId === item.id ? (
+                  <>
+                    <input
+                      autoFocus
+                      type="text"
+                      className="input flex-1 text-sm py-1"
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleEdit(item)
+                        if (e.key === 'Escape') setEditingId(null)
+                      }}
+                    />
+                    <select
+                      className="input text-sm py-1 w-32"
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value as ChecklistCategory)}
+                    >
+                      {CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>
+                          {c.emoji} {c.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => handleEdit(item)}
+                      className="text-green-500 hover:text-green-600 transition text-sm font-medium"
+                      aria-label="Save"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="text-stone-300 hover:text-stone-500 transition text-lg leading-none"
+                      aria-label="Cancel"
+                    >
+                      ×
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      type="checkbox"
+                      checked={item.checked}
+                      onChange={() => handleToggle(item)}
+                      className="h-4 w-4 rounded accent-brand-500 cursor-pointer"
+                    />
+                    <span className={clsx('flex-1 text-sm', item.checked && 'line-through text-stone-400')}>
+                      {item.label}
+                    </span>
+                    <span className="text-xs text-stone-400">
+                      {CATEGORIES.find((c) => c.value === item.category)?.emoji}
+                    </span>
+                    <button
+                      onClick={() => startEdit(item)}
+                      className="text-stone-300 hover:text-brand-500 transition text-sm leading-none"
+                      aria-label="Edit"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="text-stone-300 hover:text-red-400 transition text-lg leading-none"
+                      aria-label="Delete"
+                    >
+                      ×
+                    </button>
+                  </>
+                )}
               </motion.li>
             ))}
           </AnimatePresence>
