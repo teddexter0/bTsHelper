@@ -33,8 +33,7 @@ export default function LoginPage() {
     }
   }
 
-  async function handleReset(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleReset() {
     setResetStatus('sending')
     try {
       await resetPassword(resetEmail)
@@ -108,23 +107,23 @@ export default function LoginPage() {
                   {resetStatus === 'sent' ? (
                     <p className="text-sm text-green-600 font-medium">Check your inbox — link sent!</p>
                   ) : (
-                    <form onSubmit={handleReset} className="flex gap-2">
+                    <div className="flex gap-2">
                       <input
                         type="email"
-                        required
                         className="input flex-1 text-sm py-1.5"
                         placeholder="you@uni.edu"
                         value={resetEmail}
                         onChange={(e) => setResetEmail(e.target.value)}
                       />
                       <button
-                        type="submit"
-                        disabled={resetStatus === 'sending'}
+                        type="button"
+                        onClick={handleReset}
+                        disabled={resetStatus === 'sending' || !resetEmail}
                         className="btn-primary text-sm px-3 py-1.5 shrink-0"
                       >
                         {resetStatus === 'sending' ? '…' : 'Send'}
                       </button>
-                    </form>
+                    </div>
                   )}
                   {resetStatus === 'error' && (
                     <p className="text-xs text-red-500">Couldn't send reset email. Check the address and try again.</p>
